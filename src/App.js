@@ -119,7 +119,15 @@ const WhatsAppSaaSDashboard = () => {
         ? { email: authForm.email, password: authForm.password }
         : authForm;
 
+      console.log('Attempting authentication...', {
+        endpoint: `${API_BASE_URL}${endpoint}`,
+        mode: authMode,
+        data: { ...data, password: '[HIDDEN]' }
+      });
+
       const response = await axios.post(endpoint, data);
+      
+      console.log('Authentication response:', response.data);
       
       if (response.data.success) {
         const { token, user } = response.data;
@@ -141,7 +149,23 @@ const WhatsAppSaaSDashboard = () => {
         loadDashboardData();
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.error || `${authMode} failed. Please try again.`;
+      console.error('Authentication error:', error);
+      
+      let errorMessage;
+      if (error.response) {
+        // Server responded with error
+        errorMessage = error.response.data?.error || `Server error: ${error.response.status}`;
+        console.error('Server error response:', error.response.data);
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = 'Network error: Unable to connect to server. Please check your internet connection.';
+        console.error('Network error:', error.request);
+      } else {
+        // Something else happened
+        errorMessage = `Request setup error: ${error.message}`;
+        console.error('Request error:', error.message);
+      }
+      
       setAuthError(errorMessage);
       showNotification(errorMessage, 'error');
     } finally {
